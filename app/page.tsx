@@ -1,103 +1,151 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [form, setForm] = useState({ username: '', reason: '', appeal: '' });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [status, setStatus] = useState('');
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
+  const [disclaimerFadeOut, setDisclaimerFadeOut] = useState(false);
+  const [timer, setTimer] = useState(10);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  useEffect(() => {
+    if (showDisclaimer && timer > 0) {
+      const interval = setInterval(() => setTimer((t) => t - 1), 1000);
+      return () => clearInterval(interval);
+    }
+  }, [showDisclaimer, timer]);
+
+  const handleContinue = () => {
+    setDisclaimerFadeOut(true);
+    setTimeout(() => {
+      setShowDisclaimer(false);
+    }, 500);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!acceptedTerms) {
+      setStatus('❌ You must accept the terms before submitting.');
+      return;
+    }
+
+    setStatus('Submitting...');
+    try {
+      await axios.post('/api/submitAppeal', form);
+      setStatus('✅ Appeal submitted successfully!');
+      setForm({ username: '', reason: '', appeal: '' });
+      setAcceptedTerms(false);
+    } catch (err) {
+      console.error(err);
+      setStatus('❌ Failed to submit appeal.');
+    }
+  };
+
+  if (showDisclaimer) {
+    return (
+      <main className={`min-h-screen bg-black text-white flex items-center justify-center px-4 transition-all ${disclaimerFadeOut ? 'animate-fade' : 'animate-fadein'}`}>
+        <div className="bg-gray-900 border border-gray-700 p-8 rounded-xl max-w-2xl text-center shadow-2xl">
+          <h1 className="text-3xl font-bold mb-4 text-red-500">🚨 KSRP Security Advisory</h1>
+          <p className="text-sm text-gray-300 mb-6 leading-relaxed text-justify">
+            Welcome to the official <strong>KSRP</strong> Disciplinary Appeal Portal. This platform is used exclusively by the <strong>Development Operations Team</strong> for handling appeals regarding disciplinary actions.
+            <br /><br />
+            All appeals are logged and considered <strong>official records</strong>. Any dishonest, abusive, or inappropriate use of this system will result in <strong>permanent removal</strong> from the KSRP team and all related communities.
+            <br /><br />
+            Sharing this portal or its contents outside authorized personnel is strictly forbidden and will result in a <strong>blacklist</strong> from all KSRP internal systems.
+          </p>
+          <button
+            disabled={timer > 0}
+            onClick={handleContinue}
+            className={`px-6 py-3 rounded-lg font-semibold text-white w-full mt-4 ${
+              timer > 0
+                ? 'bg-gray-700 cursor-not-allowed'
+                : 'bg-red-600 hover:bg-red-700 transition'
+            }`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            {timer > 0 ? `Acknowledge & Continue (${timer}s)` : 'I Understand & Accept Responsibility'}
+          </button>
+          <p className="text-xs mt-4 text-gray-500 italic">
+            You confirm that you are authorized and understand the consequences of misuse.
+          </p>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white flex items-center justify-center px-4 animate-fadein">
+      <div className="bg-gray-900/60 backdrop-blur-lg border border-gray-700 shadow-2xl rounded-2xl p-8 w-full max-w-xl">
+        <h1 className="text-3xl font-bold mb-6 text-center text-blue-400">
+          🚨 KSRP Disciplinary Appeal Form
+        </h1>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div>
+            <label className="text-sm font-medium">Discord Username</label>
+            <input
+              type="text"
+              placeholder="e.g. CoolUser#1234"
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
+              required
+              className="w-full mt-1 p-3 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Punishment Reason</label>
+            <input
+              type="text"
+              placeholder="e.g. Inappropriate language"
+              value={form.reason}
+              onChange={(e) => setForm({ ...form, reason: e.target.value })}
+              required
+              className="w-full mt-1 p-3 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Your Appeal</label>
+            <textarea
+              placeholder="Explain why you believe your punishment should be lifted..."
+              value={form.appeal}
+              onChange={(e) => setForm({ ...form, appeal: e.target.value })}
+              required
+              className="w-full mt-1 p-3 rounded-lg bg-gray-800 border border-gray-700 h-36 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex items-start gap-2 mt-2">
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={() => setAcceptedTerms(!acceptedTerms)}
+              className="mt-1"
+            />
+            <label className="text-sm text-gray-300 leading-tight">
+              I confirm that all information provided is accurate and I accept the{' '}
+              <span className="underline cursor-pointer text-blue-400 hover:text-blue-300">
+                KSRP Appeal Terms and Conditions
+              </span>
+              .
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            className="bg-blue-600 hover:bg-blue-700 transition-colors duration-300 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:scale-105"
+          >
+            📩 Submit Appeal
+          </button>
+          <p className="text-sm text-center mt-2 text-green-400">{status}</p>
+        </form>
+        <p className="text-xs text-center text-gray-400 mt-6">
+          Appeals are reviewed directly by the KSRP staff team via internal systems.
+        </p>
+        <p className="text-xs text-center text-gray-500 mt-3">
+          Developed with ❤️ by bunbun for KSRP
+        </p>
+      </div>
+    </main>
   );
 }
